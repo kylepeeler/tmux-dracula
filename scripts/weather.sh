@@ -43,14 +43,15 @@ weather_icon() {
 }
 
 LOCATION=$(curl --silent http://ip-api.com/csv)
-CITY=$(echo "$LOCATION" | cut -d , -f 6)
+CITY=$(echo "Indianapolis" | cut -d , -f 6)
 LAT=$(echo "$LOCATION" | cut -d , -f 8)
 LON=$(echo "$LOCATION" | cut -d , -f 9)
 
-WEATHER=$(curl --silent http://api.openweathermap.org/data/2.5/weather\?lat="$LAT"\&lon="$LON"\&APPID="$API_KEY"\&units=metric)
+
+WEATHER=$(curl --silent http://api.openweathermap.org/data/2.5/weather\?q="$CITY"\&APPID="$API_KEY"\&units=imperial)
 
 CATEGORY=$(echo "$WEATHER" | jq .weather[0].id)
-TEMP="$(echo "$WEATHER" | jq .main.temp | cut -d . -f 1)°C"
+TEMP="$(echo "$WEATHER" | jq .main.temp | cut -d . -f 1)°F"
 WIND_SPEED="$(echo "$WEATHER" | jq .wind.speed | awk '{print int($1+0.5)}')ms"
 ICON=$(weather_icon "$CATEGORY")
 
@@ -58,7 +59,7 @@ main()
 {
 	# process should be cancelled when session is killed
 	if ping -q -c 1 -W 1 ipinfo.io &>/dev/null; then
-		printf "%s" "$CITY:$ICON $TEMP, $WIND_SPEED"
+		printf "%s" "$CITY: $ICON  $TEMP"
 	else
 		echo "Location Unavailable"
 	fi
