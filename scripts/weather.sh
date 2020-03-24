@@ -1,65 +1,64 @@
-#!/usr/bin/env bash
+#!/bin/bash
+#
+# Weather
+# =======
+#
+# By Jezen Thomas <jezen@jezenthomas.com>
+#
+# This script sends a couple of requests over the network to retrieve
+# approximate location data, and the current weather for that location. This is
+# useful if for example you want to display the current weather in your tmux
+# status bar.
 
-#author: Dane Williams
-#script for gathering current location and weather at location
-#script is then called in the dracula.tmux program
+# There are three things you will need to do before using this script.
+#
+# 1. Install jq with your package manager of choice (homebrew, apt-get, etc.)
+# 2. Sign up for a free account with OpenWeatherMap to grab your API key
+# 3. Add your OpenWeatherMap API key where it says API_KEY
 
-city=$(curl -s https://ipinfo.io/city 2> /dev/null)
-region=$(curl -s https://ipinfo.io/region 2> /dev/null)
-zip=$(curl -s https://ipinfo.io/postal 2> /dev/null | tail -1)
-country=$(curl -s https://ipinfo.io/country 2> /dev/null)
+# OPENWEATHERMAP API KEY (place yours here)
+API_KEY="412a6516f506201b00a7bc576cdd287a"
 
-region_code_url=http://www.ip2country.net/ip2country/region_code.html
-weather_url=https://forecast.weather.gov/zipcity.php
+set -e
 
-#substitute region code for regions in north america
-get_region_code()
-{
-	curl -s $region_code_url | grep $region &> /dev/null && region=$(curl -s $region_code_url | grep $region | cut -d ',' -f 2)
-	echo $region
+# Not all icons for weather symbols have been added yet. If the weather
+# category is not matched in this case statement, the command output will
+# include the category ID. You can add the appropriate emoji as you go along.
+#
+# Weather data reference: http://openweathermap.org/weather-conditions
+weather_icon() {
+  case $1 in
+    500) echo 🌦
+      ;;
+    800) echo ☀️
+      ;;
+    801) echo 🌤
+      ;;
+    803) echo ⛅️
+      ;;
+    804) echo ☁️
+      ;;
+    *) echo "$1"
+  esac
 }
 
-weather_information()
-{
-	curl -sL $weather_url?inputstring=$zip | grep myforecast-current | grep -Eo '>.*<' | sed -E 's/>(.*)</\1/'
-}
-get_temp()
-{
-	weather_information | grep 'deg;F' | cut -d '&' -f 1
-}
-forecast_unicode() 
-{
-	forecast=$(weather_information | head -n 1)
+LOCATION=$(curl --silent http://ip-api.com/csv)
+CITY=$(echo "$LOCATION" | cut -d , -f 6)
+LAT=$(echo "$LOCATION" | cut -d , -f 8)
+LON=$(echo "$LOCATION" | cut -d , -f 9)
 
-	if [[ $forecast =~ 'Snow' ]]; then
-		echo '❄ '
-	elif [[ (($forecast =~ 'Rain') || ($forecast =~ 'Shower')) ]]; then
-		echo '☂ '
-	elif [[ (($forecast =~ 'Overcast') || ($forecast =~ 'Cloud')) ]]; then
-		echo '☁ '
-	elif [[ $forecast = 'NA' ]]; then
-		echo ''
-	else
-		echo '☀ '
-	fi
-	
+WEATHER=$(curl --silent http://api.openweathermap.org/data/2.5/weather\?lat="$LAT"\&lon="$LON"\&APPID="$API_KEY"\&units=metric)
 
-}
-#get weather display if in US
-display_weather()
-{
-	if [ $country = 'US' ]; then
-		echo "$(forecast_unicode)$(get_temp)°F"
-	else
-		echo ''
-	fi
-}
+CATEGORY=$(echo "$WEATHER" | jq .weather[0].id)
+TEMP="$(echo "$WEATHER" | jq .main.temp | cut -d . -f 1)°C"
+WIND_SPEED="$(echo "$WEATHER" | jq .wind.speed | awk '{print int($1+0.5)}')ms"
+ICON=$(weather_icon "$CATEGORY")
 
 main()
 {
 	# process should be cancelled when session is killed
 	if ping -q -c 1 -W 1 ipinfo.io &>/dev/null; then
-		echo "$(display_weather) $city, $(get_region_code)"
+		printf "%s" "$CITY:$ICON $TEMP, $WIND_SPEED"
 	else
 		echo "Location Unavailable"
 	fi
