@@ -28,15 +28,27 @@ set -e
 # Weather data reference: http://openweathermap.org/weather-conditions
 weather_icon() {
   case $1 in
-    500) echo 🌦
+    # Group 2xx: Thunderstorms
+    200) echo 
       ;;
-    800) echo ☀️
+    # Group 3xx: Drizzle
+    300) echo 
       ;;
-    801) echo 🌤
+    # Group 5xx: Rain
+    500) echo 
       ;;
-    803) echo ⛅️
+    # Group 6xx: Snow
+    600) echo 
       ;;
-    804) echo ☁️
+    # Group 800: Clear
+    800) echo 
+      ;;
+      # Group 80x: Clouds
+    801) echo 
+      ;;
+    803) echo 
+      ;;
+    804) echo 
       ;;
     *) echo "$1"
   esac
@@ -59,7 +71,7 @@ main()
 {
 	# process should be cancelled when session is killed
 	if ping -q -c 1 -W 1 ipinfo.io &>/dev/null; then
-		printf "%s" "$CITY: $ICON  $TEMP"
+		printf "%s" "$CITY $ICON $TEMP"
 	else
 		echo "Location Unavailable"
 	fi
