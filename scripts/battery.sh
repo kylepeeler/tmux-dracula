@@ -24,7 +24,7 @@ main()
 {
 	bat_stat=$(battery_status)
 	bat_perc=$(battery_percent)
-	echo " $bat_stat$bat_perc"
+	echo "$bat_stat$bat_perc"
 }
 
 #run main driver program
