@@ -48,9 +48,9 @@ main()
 
   tmux set-option -g status-right "#[fg=${dark_gray},bg=${pink}] #($current_dir/battery.sh) "
   tmux set-option -ga status-right "#[fg=${dark_gray},bg=${cyan}]#($current_dir/network.sh) "
-  tmux set-option -ga status-right "#[fg=${dark_gray},bg=${orange}] #{weather} " 
+  tmux set-option -ga status-right "#[fg=${dark_gray},bg=${orange}] #(cat $current_dir/../data/weather.txt) " 
   tmux set-option -ga status-right "#[fg=${dark_gray},bg=${green}]#(tmux-spotify-info)"
-  tmux set-option -ga status-right "#[fg=${white},bg=${dark_purple}] %a %b %d - %I:%M %p #(date +%Z) "
+	tmux set-option -ga status-right "#[fg=${white},bg=${dark_purple}] %a %b %d - %I:%M %p #(date +%Z) "
   
   # window tabs 
   tmux set-window-option -g window-status-current-format "#[fg=${white},bg=${dark_purple}] #I #W "
